@@ -1,0 +1,13 @@
+{
+  "name": "studydeck-hci",
+  "version": "2.0.0",
+  "description": "Multimodal Accessible Flashcard System with Eye-Gaze (WebGazer) and Voice Recognition",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "keywords": ["hci", "multimodal", "webgazer", "speech-recognition", "accessibility"],
+  "author": "HCI Project",
+  "license": "MIT"
+}
+

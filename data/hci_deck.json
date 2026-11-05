@@ -1,0 +1,220 @@
+[
+  {
+    "id": 1,
+    "category": "Short Question",
+    "type": "short",
+    "q": "1. What is HCI?",
+    "a": "HCI (Human-Computer Interaction) is the study of how humans interact with computers and how to design easy, efficient, and user-friendly systems.",
+    "details": "Key focus: Interface usability, user experience (UX), and accessibility."
+  },
+  {
+    "id": 2,
+    "category": "Short Question",
+    "type": "short",
+    "q": "2. What is the main goal of HCI?",
+    "a": "To make computer systems simple, efficient, comfortable, safe, and error-free for users.",
+    "details": "Ensures technology adapts to human needs, rather than forcing humans to adapt to computers."
+  },
+  {
+    "id": 3,
+    "category": "Short Question",
+    "type": "short",
+    "q": "3. What is usability?",
+    "a": "Usability means how easy and pleasant a system is to learn, use, remember, and how few mistakes it causes.",
+    "details": "Core dimensions: Learnability, Efficiency, Memorability, Low Error Rate, Satisfaction."
+  },
+  {
+    "id": 4,
+    "category": "Short Question",
+    "type": "short",
+    "q": "4. What is Human-Centered Design (HCD)?",
+    "a": "A design method that actively focuses on user needs, limits, skills, and behavior throughout the development cycle.",
+    "details": "Iterative process: Research users -> Design solutions -> Prototype -> Evaluate with users."
+  },
+  {
+    "id": 5,
+    "category": "Short Question",
+    "type": "short",
+    "q": "5. What is a mental model?",
+    "a": "The internal conceptual picture or idea a user has in mind about how a system works.",
+    "details": "Good UI aligns the system design model with the user mental model to prevent confusion."
+  },
+  {
+    "id": 6,
+    "category": "Short Question",
+    "type": "short",
+    "q": "6. What is working memory?",
+    "a": "Short-term memory used while actively thinking or doing tasks; it has very limited capacity (approx. 7 ± 2 chunks).",
+    "details": "Designers must avoid cognitive overload by not requiring users to remember too many items at once."
+  },
+  {
+    "id": 7,
+    "category": "Short Question",
+    "type": "short",
+    "q": "7. What is long-term memory?",
+    "a": "Memory that stores information for a long time, including rules, language, procedural skills, and accumulated knowledge.",
+    "details": "Has virtually unlimited capacity, but retrieval relies on effective cues and recognition over recall."
+  },
+  {
+    "id": 8,
+    "category": "Short Question",
+    "type": "short",
+    "q": "8. What is perception?",
+    "a": "How users detect and understand information received through their senses, especially visual perception on digital screens.",
+    "details": "Influenced by contrast, gestalt principles, typography, visual hierarchy, and color cues."
+  },
+  {
+    "id": 9,
+    "category": "Short Question",
+    "type": "short",
+    "q": "9. What are interaction styles?",
+    "a": "The diverse ways users interact with computers: Command-Line Interfaces (CLI), Menus, Form fill-in, and Direct Manipulation.",
+    "details": "Different interaction styles cater to distinct user expertise levels and task environments."
+  },
+  {
+    "id": 10,
+    "category": "Short Question",
+    "type": "short",
+    "q": "10. What is direct manipulation?",
+    "a": "Interacting with on-screen visual objects directly, such as dragging icons, resizing windows, and pinching to zoom.",
+    "details": "Provides continuous representation of objects, physical actions, and rapid, reversible incremental feedback."
+  },
+  {
+    "id": 11,
+    "category": "Long Question",
+    "type": "long",
+    "q": "1. Importance of HCI (Long Question)",
+    "a": "HCI makes technology easier and better to use:\n\n• Reduces user errors & cognitive friction\n• Saves operational time and increases productivity\n• Elevates user satisfaction & engagement\n• Promotes universal accessibility for beginners, experts, elderly users, and people with disabilities.",
+    "details": "Without HCI principles, software becomes unintuitive, leading to high frustration and abandonment."
+  },
+  {
+    "id": 12,
+    "category": "Long Question",
+    "type": "long",
+    "q": "2. Human Information Processing Model (Long Question)",
+    "a": "This fundamental cognitive model explains how humans receive, store, and process information:\n\n1. Sensory Memory – briefly captures raw environmental stimuli through senses (visual, auditory).\n2. Working Memory – holds small amounts of information for a short time during active thought.\n3. Long-Term Memory – stores knowledge, associations, and rules permanently.\n\nDesign Rule: Systems must respect cognitive limits to avoid cognitive overload.",
+    "details": "Interfaces should favor recognition over recall and minimize working memory strain."
+  },
+  {
+    "id": 13,
+    "category": "Long Question",
+    "type": "long",
+    "q": "3. Usability and Its Components (Long Question)",
+    "a": "Usability is defined across five core quality attributes (Nielsen):\n\n• Learnability: How easy is it for first-time users to accomplish basic tasks?\n• Efficiency: Once learned, how quickly can users perform tasks?\n• Memorability: When returning after a period of non-use, how easily can users re-establish proficiency?\n• Errors: How few errors do users make, how severe are they, and how easily can they recover?\n• Satisfaction: How pleasant and comfortable is the system to use?",
+    "details": "Balancing these five dimensions is central to successful interaction design."
+  },
+  {
+    "id": 14,
+    "category": "Long Question",
+    "type": "long",
+    "q": "4. Interaction Styles (Long Question)",
+    "a": "The four major interaction paradigms each suit different users and contexts:\n\n• Command-Line Interface (CLI): Typing textual commands; powerful and fast for expert users, steep learning curve.\n• Menus: Selecting options from structured lists; reduces memory load, easy for novices.\n• Form Fill-in: Structured data entry fields; straightforward for repetitive administrative data entry.\n• Direct Manipulation: Visual objects clicked and dragged directly; intuitive, immediate visual feedback, easy to reverse.",
+    "details": "Modern systems frequently combine multiple styles (e.g., GUI with keyboard shortcuts)."
+  },
+  {
+    "id": 15,
+    "category": "Long Question",
+    "type": "long",
+    "q": "5. Human Factors in Interaction Design (Long Question)",
+    "a": "HCI designers must systematically accommodate critical human constraints:\n\n• Physical Factors: Visual acuity, field of view, color perception, hearing ranges, motor dexterity.\n• Psychological Factors: Stress, time pressure, emotional state, fatigue.\n• Cognitive Factors: Attention span, working memory limits, mental models, decision-making biases.\n• Experience Level: Designing adaptive flows for novices, intermediate users, and seasoned experts.",
+    "details": "Addressing human factors prevents fatigue, reduces critical errors, and ensures universal usability."
+  },
+  {
+    "id": 16,
+    "category": "MCQ",
+    "type": "mcq",
+    "q": "1. HCI stands for:\n\nA) Human Computer Interaction\nB) Human Control Interface\nC) Host Computer Integration\nD) Hardware Control Index",
+    "a": "Correct Answer: A\n\nExplanation: HCI stands for Human-Computer Interaction, the multidisciplinary field focused on computer interface design and user experience.",
+    "options": [
+      "A) Human Computer Interaction",
+      "B) Human Control Interface",
+      "C) Host Computer Integration",
+      "D) Hardware Control Index"
+    ],
+    "correct": "A"
+  },
+  {
+    "id": 17,
+    "category": "MCQ",
+    "type": "mcq",
+    "q": "2. Which memory has limited capacity?\n\nA) Working memory\nB) Long-term memory\nC) Sensory memory\nD) Permanent memory",
+    "a": "Correct Answer: A\n\nExplanation: Working memory is short-term and has very limited capacity (holding roughly 4-7 chunks of active information).",
+    "options": [
+      "A) Working memory",
+      "B) Long-term memory",
+      "C) Sensory memory",
+      "D) Permanent memory"
+    ],
+    "correct": "A"
+  },
+  {
+    "id": 18,
+    "category": "MCQ",
+    "type": "mcq",
+    "q": "3. Direct manipulation means:\n\nA) Writing terminal commands\nB) Dragging objects on screen\nC) Reading user manuals\nD) Waiting for background jobs",
+    "a": "Correct Answer: B\n\nExplanation: Direct manipulation allows users to interact directly with on-screen visual elements (e.g. dragging, resizing, dropping).",
+    "options": [
+      "A) Writing terminal commands",
+      "B) Dragging objects on screen",
+      "C) Reading user manuals",
+      "D) Waiting for background jobs"
+    ],
+    "correct": "B"
+  },
+  {
+    "id": 19,
+    "category": "MCQ",
+    "type": "mcq",
+    "q": "4. Which is NOT an interaction style?\n\nA) CLI\nB) Menus\nC) Direct Manipulation\nD) Electricity flow",
+    "a": "Correct Answer: D\n\nExplanation: Electricity flow is a physical electrical phenomenon, not a human-computer interaction style. Interaction styles include CLI, Menus, Forms, and Direct Manipulation.",
+    "options": [
+      "A) CLI",
+      "B) Menus",
+      "C) Direct Manipulation",
+      "D) Electricity flow"
+    ],
+    "correct": "D"
+  },
+  {
+    "id": 20,
+    "category": "MCQ",
+    "type": "mcq",
+    "q": "5. Usability focuses on:\n\nA) Server hardware overclocking\nB) User satisfaction and ease-of-use\nC) CPU clock frequency\nD) Database query execution plan",
+    "a": "Correct Answer: B\n\nExplanation: Usability measures how easy, efficient, memorable, and satisfying a system is for human users.",
+    "options": [
+      "A) Server hardware overclocking",
+      "B) User satisfaction and ease-of-use",
+      "C) CPU clock frequency",
+      "D) Database query execution plan"
+    ],
+    "correct": "B"
+  },
+  {
+    "id": 21,
+    "category": "MCQ",
+    "type": "mcq",
+    "q": "6. Norman’s model of interaction is based on:\n\nA) Execution and evaluation\nB) Compiling and debugging\nC) Uploading and downloading\nD) Encryption and hashing",
+    "a": "Correct Answer: A\n\nExplanation: Don Norman’s 7 Stages of Action are divided into two main cycles: Execution (Gulf of Execution) and Evaluation (Gulf of Evaluation).",
+    "options": [
+      "A) Execution and evaluation",
+      "B) Compiling and debugging",
+      "C) Uploading and downloading",
+      "D) Encryption and hashing"
+    ],
+    "correct": "A"
+  },
+  {
+    "id": 22,
+    "category": "MCQ",
+    "type": "mcq",
+    "q": "7. Expert users are:\n\nA) First-time system visitors\nB) Users who only use mouse clicks\nC) Users with high experience\nD) Casual occasional users",
+    "a": "Correct Answer: C\n\nExplanation: Expert users possess deep familiarity and frequent interaction with the system, valuing rapid shortcuts, keystrokes, and minimal overhead.",
+    "options": [
+      "A) First-time system visitors",
+      "B) Users who only use mouse clicks",
+      "C) Users with high experience",
+      "D) Casual occasional users"
+    ],
+    "correct": "C"
+  }
+]

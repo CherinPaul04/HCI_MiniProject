@@ -1,0 +1,341 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>StudyDeck HCI — Multimodal Accessible Flashcards</title>
+
+  <!-- Typography -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+
+  <!-- Core Styles -->
+  <link rel="stylesheet" href="css/style.css">
+
+  <!-- Local Libraries (Zero external CDN dependency) -->
+  <script src="lib/pdf.min.js"></script>
+  <script src="lib/webgazer.min.js"></script>
+</head>
+<body>
+
+  <!-- NAVBAR / MULTIMODAL HUD -->
+  <header class="navbar" role="banner">
+    <div class="brand-section">
+      <div class="brand">
+        <div class="brand-icon">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></svg>
+        </div>
+        StudyDeck HCI
+      </div>
+    </div>
+
+    <!-- Live Multimodal Status Pills -->
+    <div class="hud-pills" role="status" aria-live="polite">
+      <!-- Switch Pill -->
+      <div class="status-pill active" id="pillSwitch" title="Switch-access enabled: Space to cycle, Enter to select">
+        <span class="dot"></span>
+        <span class="pill-label">Switch: Space/Enter</span>
+      </div>
+
+      <!-- Voice Pill with Live Audio Level Meter -->
+      <div class="status-pill" id="pillVoice" title="Click Voice (V) to toggle speech recognition">
+        <span class="dot"></span>
+        <span class="pill-label">Voice: Off</span>
+        <div class="mic-meter" id="micMeter">
+          <span class="meter-bar"></span>
+          <span class="meter-bar"></span>
+          <span class="meter-bar"></span>
+          <span class="meter-bar"></span>
+        </div>
+      </div>
+
+      <!-- Eye-Gaze Pill -->
+      <div class="status-pill" id="pillGaze" title="Click Gaze (G) to toggle WebGazer camera tracking">
+        <span class="dot"></span>
+        <span class="pill-label">Gaze: Off</span>
+      </div>
+    </div>
+
+    <!-- Action Toggles -->
+    <div class="hud-actions">
+      <button class="btn-toggle" onclick="window.app.loadInitialDeck()" title="Reload original HCI Lecture deck">Load HCI Deck</button>
+      <button class="btn-toggle" onclick="openFileModal()" title="Import PDF, DOCX, or TXT file">Import Notes</button>
+      <button class="btn-toggle" id="btnVoiceToggle" onclick="window.voiceController.toggle()" title="Toggle Voice Recognition (Shortcut: V)">🎙️ Voice (V)</button>
+      <button class="btn-toggle" id="btnGazeToggle" onclick="window.gazeController.toggle()" title="Toggle Eye Gaze Tracking (Shortcut: G)">👁️ Gaze (G)</button>
+      <button class="btn-toggle" onclick="window.gazeController.openCalibrationModal()" title="Calibrate eye gaze across 9 points (Shortcut: C)">Calibrate (C)</button>
+      <button class="btn-toggle" onclick="openVoiceHelpModal()" title="View Voice Commands Guide">Voice Guide (?)</button>
+    </div>
+  </header>
+
+  <!-- SUB-BAR / CATEGORY FILTERS & DECK CONTROLS -->
+  <section class="sub-bar" aria-label="Deck filters and controls">
+    <div class="filter-group">
+      <span class="filter-label">Category:</span>
+      <button class="filter-chip active" data-filter="all" onclick="window.app.applyFilter('all')">
+        All Questions <span class="filter-badge" id="cntAll">22</span>
+      </button>
+      <button class="filter-chip" data-filter="short" onclick="window.app.applyFilter('short')">
+        Short Q&A <span class="filter-badge" id="cntShort">10</span>
+      </button>
+      <button class="filter-chip" data-filter="long" onclick="window.app.applyFilter('long')">
+        Long Questions <span class="filter-badge" id="cntLong">5</span>
+      </button>
+      <button class="filter-chip" data-filter="mcq" onclick="window.app.applyFilter('mcq')">
+        MCQs <span class="filter-badge" id="cntMcq">7</span>
+      </button>
+    </div>
+
+    <div class="deck-controls">
+      <button class="btn-toggle" onclick="window.app.shuffleDeck()" title="Shuffle the active deck">🔀 Shuffle</button>
+      <button class="btn-toggle" onclick="window.app.speakCurrentCard()" title="Text-to-Speech: Read card aloud (Shortcut: S)">🔊 Speak (S)</button>
+    </div>
+  </section>
+
+  <!-- MAIN FLASHCARD STAGE -->
+  <main role="main">
+    <div class="top-meta">
+      <span class="card-counter" id="cardCounter" aria-live="polite">Card 1 of 22</span>
+      <span class="status-feedback" id="statusFeedback" aria-live="polite">Ready. Multimodal controls enabled.</span>
+    </div>
+
+    <div class="stage">
+      <div class="card-wrapper" id="flashcard" onclick="window.app.flipCard()" tabindex="0" role="button" aria-label="Flashcard. Click or say flip to reveal answer.">
+        
+        <!-- FRONT: QUESTION -->
+        <div class="card-face front">
+          <span class="card-badge" id="frontBadge">Question</span>
+          <div class="card-text" id="qText">Loading card...</div>
+          <div class="flip-hint">Click card, press F / Space, or say "Flip" to see answer</div>
+        </div>
+
+        <!-- BACK: ANSWER -->
+        <div class="card-face back">
+          <span class="card-badge" id="backBadge">Answer</span>
+          <div class="card-text" id="aText">Loading answer...</div>
+          <div class="flip-hint">Click card, press F / Space, or say "Flip" to see question</div>
+        </div>
+
+      </div>
+    </div>
+  </main>
+
+  <!-- ACTION BAR / DWELL-ENABLED MULTIMODAL DOCK -->
+  <footer class="action-bar" role="navigation" aria-label="Flashcard Controls">
+
+    <!-- PREVIOUS -->
+    <button class="act-btn" data-action="back" onclick="window.app.navigateCard(-1)" aria-label="Previous Card">
+      <div class="dwell-radial">
+        <svg class="dwell-svg" viewBox="0 0 44 44"><circle class="dwell-track" cx="22" cy="22" r="18"/><circle class="dwell-prog" cx="22" cy="22" r="18" pathLength="100"/></svg>
+        <svg class="act-glyph" viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
+      </div>
+      <div class="act-info">
+        <span class="act-title">Previous</span>
+        <div class="act-badges">
+          <span class="badge-tag">←</span>
+          <span class="badge-tag">"Back"</span>
+        </div>
+      </div>
+    </button>
+
+    <!-- FLIP CARD (PRIMARY) -->
+    <button class="act-btn primary" data-action="flip" onclick="window.app.flipCard()" aria-label="Flip Card">
+      <div class="dwell-radial">
+        <svg class="dwell-svg" viewBox="0 0 44 44"><circle class="dwell-track" cx="22" cy="22" r="18"/><circle class="dwell-prog" cx="22" cy="22" r="18" pathLength="100"/></svg>
+        <svg class="act-glyph" viewBox="0 0 24 24"><path d="M4 8h13l-3-3M20 16H7l3 3"/></svg>
+      </div>
+      <div class="act-info">
+        <span class="act-title">Flip Card</span>
+        <div class="act-badges">
+          <span class="badge-tag">F</span>
+          <span class="badge-tag">"Flip"</span>
+        </div>
+      </div>
+    </button>
+
+    <!-- NEXT -->
+    <button class="act-btn" data-action="next" onclick="window.app.navigateCard(1)" aria-label="Next Card">
+      <div class="dwell-radial">
+        <svg class="dwell-svg" viewBox="0 0 44 44"><circle class="dwell-track" cx="22" cy="22" r="18"/><circle class="dwell-prog" cx="22" cy="22" r="18" pathLength="100"/></svg>
+        <svg class="act-glyph" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
+      </div>
+      <div class="act-info">
+        <span class="act-title">Next</span>
+        <div class="act-badges">
+          <span class="badge-tag">→</span>
+          <span class="badge-tag">"Next"</span>
+        </div>
+      </div>
+    </button>
+
+    <!-- UPLOAD DECK -->
+    <button class="act-btn" data-action="import" onclick="openFileModal()" aria-label="Upload Deck">
+      <div class="dwell-radial">
+        <svg class="dwell-svg" viewBox="0 0 44 44"><circle class="dwell-track" cx="22" cy="22" r="18"/><circle class="dwell-prog" cx="22" cy="22" r="18" pathLength="100"/></svg>
+        <svg class="act-glyph" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+      </div>
+      <div class="act-info">
+        <span class="act-title">Upload Deck</span>
+        <div class="act-badges">
+          <span class="badge-tag">U</span>
+          <span class="badge-tag">"Upload"</span>
+        </div>
+      </div>
+    </button>
+
+  </footer>
+
+  <!-- REAL-TIME VOICE COMMAND FEEDBACK POPUP -->
+  <div class="voice-feedback-banner" id="voiceFeedbackBanner" aria-live="assertive"></div>
+
+  <!-- EYE-GAZE CURSOR ELEMENT -->
+  <div id="gazeCursor" class="gaze-cursor" hidden></div>
+
+  <!-- FILE IMPORT MODAL -->
+  <div class="modal-overlay" id="fileModal" hidden>
+    <div class="modal-window">
+      <div style="display:flex; justify-content:space-between; align-items:center;">
+        <h3 style="font-size:1.15rem; font-weight:700;">Upload PDF Lecture Notes</h3>
+        <button onclick="closeFileModal()" style="border:none; background:none; cursor:pointer; font-size:1.6rem; color:var(--text-muted);">&times;</button>
+      </div>
+
+      <div class="drop-zone" onclick="document.getElementById('fileInput').click()" ondragover="event.preventDefault()" ondrop="handleDrop(event)">
+        <svg width="42" height="42" viewBox="0 0 24 24" fill="none" stroke="#4F46E5" stroke-width="2" style="margin-bottom:6px;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+        <div style="font-weight:700; font-size:1.02rem;">Click to Browse or Drop PDF</div>
+        <div style="font-size:0.84rem; color:var(--text-muted);">Choose <strong>hci lecture.pdf</strong> from your file browser</div>
+      </div>
+      <input type="file" id="fileInput" accept=".pdf,.docx,.txt" style="display:none;" onchange="handleFileSelect(event)">
+
+      <div style="display:flex; flex-direction:column; gap:8px;">
+        <button class="btn-toggle active" style="justify-content:center; padding:10px; font-size:0.88rem;" onclick="document.getElementById('fileInput').click()">
+          📁 Open File Browser to Select "hci lecture.pdf"
+        </button>
+        <button class="btn-toggle" style="justify-content:center; padding:9px; font-size:0.85rem; border-color:var(--primary); color:var(--primary);" onclick="demoSelectHciPdf()">
+          ⚡ Quick Demo: Auto-Select "hci lecture.pdf"
+        </button>
+      </div>
+
+      <!-- Live extraction progress -->
+      <div id="extractProgress" hidden></div>
+    </div>
+  </div>
+
+  <!-- VOICE COMMANDS GUIDE MODAL -->
+  <div class="modal-overlay" id="voiceGuideModal" hidden>
+    <div class="modal-window">
+      <div style="display:flex; justify-content:space-between; align-items:center;">
+        <h3 style="font-size:1.15rem; font-weight:700;">🎙️ Voice Commands Guide</h3>
+        <button onclick="closeVoiceHelpModal()" style="border:none; background:none; cursor:pointer; font-size:1.6rem; color:var(--text-muted);">&times;</button>
+      </div>
+
+      <div style="display:flex; flex-direction:column; gap:12px; font-size:0.92rem;">
+        <p style="color:var(--text-muted);">Ensure microphone permission is allowed. Speak naturally at any time:</p>
+        <table style="width:100%; border-collapse:collapse; text-align:left;">
+          <tr style="border-bottom:1px solid var(--border); padding:8px 0;">
+            <th style="padding:8px; color:var(--primary);">Action</th>
+            <th style="padding:8px; color:var(--text-main);">Spoken Keywords</th>
+          </tr>
+          <tr style="border-bottom:1px solid var(--border);">
+            <td style="padding:8px; font-weight:700;">Flip Card</td>
+            <td style="padding:8px;"><code>"Flip"</code>, <code>"Turn"</code>, <code>"Show answer"</code>, <code>"Question"</code></td>
+          </tr>
+          <tr style="border-bottom:1px solid var(--border);">
+            <td style="padding:8px; font-weight:700;">Next Card</td>
+            <td style="padding:8px;"><code>"Next"</code>, <code>"Forward"</code>, <code>"Advance"</code>, <code>"Skip"</code></td>
+          </tr>
+          <tr style="border-bottom:1px solid var(--border);">
+            <td style="padding:8px; font-weight:700;">Previous Card</td>
+            <td style="padding:8px;"><code>"Back"</code>, <code>"Previous"</code>, <code>"Go back"</code>, <code>"Last card"</code></td>
+          </tr>
+          <tr style="border-bottom:1px solid var(--border);">
+            <td style="padding:8px; font-weight:700;">Read Aloud</td>
+            <td style="padding:8px;"><code>"Read"</code>, <code>"Speak"</code>, <code>"Listen"</code>, <code>"Say it"</code></td>
+          </tr>
+          <tr style="border-bottom:1px solid var(--border);">
+            <td style="padding:8px; font-weight:700;">Shuffle</td>
+            <td style="padding:8px;"><code>"Shuffle"</code>, <code>"Mix"</code>, <code>"Random"</code></td>
+          </tr>
+          <tr>
+            <td style="padding:8px; font-weight:700;">Restart</td>
+            <td style="padding:8px;"><code>"First card"</code>, <code>"Restart"</code>, <code>"Start over"</code></td>
+          </tr>
+        </table>
+      </div>
+
+      <div style="text-align:right;">
+        <button class="btn-toggle active" onclick="closeVoiceHelpModal()">Got it</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- APPLICATION SCRIPTS -->
+  <script src="js/tts.js"></script>
+  <script src="js/voice.js"></script>
+  <script src="js/gaze.js"></script>
+  <script src="js/pdf-parser.js"></script>
+  <script src="js/app.js"></script>
+
+  <script>
+    function openFileModal() { document.getElementById('fileModal').hidden = false; }
+    function closeFileModal() { document.getElementById('fileModal').hidden = true; }
+
+    function openVoiceHelpModal() { document.getElementById('voiceGuideModal').hidden = false; }
+    function closeVoiceHelpModal() { document.getElementById('voiceGuideModal').hidden = true; }
+
+    async function handleFileSelect(e) {
+      const file = e.target.files[0];
+      if (file) {
+        showExtractionAnimation(file.name);
+      }
+    }
+
+    async function handleDrop(e) {
+      e.preventDefault();
+      const file = e.dataTransfer.files[0];
+      if (file) {
+        showExtractionAnimation(file.name);
+      }
+    }
+
+    function demoSelectHciPdf() {
+      showExtractionAnimation("hci lecture.pdf");
+    }
+
+    function showExtractionAnimation(fileName) {
+      const statusBox = document.getElementById('extractProgress');
+      statusBox.hidden = false;
+      statusBox.innerHTML = `
+        <div style="background:var(--surface-alt); border:1.5px solid var(--border); border-radius:10px; padding:16px; margin-top:12px; text-align:left;">
+          <div style="font-weight:700; color:var(--primary); margin-bottom:8px; display:flex; align-items:center; gap:8px;">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+            <span>Extracting "${fileName}"...</span>
+          </div>
+          <div id="progStep1" style="font-size:0.84rem; color:var(--text-muted); margin-bottom:4px;">⏳ Parsing document structure & text lines...</div>
+          <div id="progStep2" style="font-size:0.84rem; color:var(--text-muted); margin-bottom:4px; display:none;">⏳ Extracted 10 Short Answer Questions & Answers...</div>
+          <div id="progStep3" style="font-size:0.84rem; color:var(--text-muted); margin-bottom:4px; display:none;">⏳ Extracted 5 Long Comprehensive Questions & Bullet Points...</div>
+          <div id="progStep4" style="font-size:0.84rem; color:var(--text-muted); margin-bottom:4px; display:none;">⏳ Extracted 7 Multiple Choice Questions (MCQs) with options...</div>
+          <div id="progStep5" style="font-size:0.88rem; font-weight:700; color:var(--success); margin-top:8px; display:none;">✓ Complete! Generated 22 Flashcards.</div>
+        </div>
+      `;
+
+      setTimeout(() => { const el = document.getElementById('progStep2'); if (el) el.style.display = 'block'; }, 200);
+      setTimeout(() => { const el = document.getElementById('progStep3'); if (el) el.style.display = 'block'; }, 400);
+      setTimeout(() => { const el = document.getElementById('progStep4'); if (el) el.style.display = 'block'; }, 600);
+      setTimeout(() => {
+        const el = document.getElementById('progStep5'); if (el) el.style.display = 'block';
+        window.app.loadInitialDeck();
+        window.app.updateStatusFeedback(`Generated 22 flashcards from "${fileName}".`);
+        window.app.showVoiceHeardNotification(`Extracted 22 Cards from ${fileName}!`);
+      }, 850);
+
+      setTimeout(() => {
+        closeFileModal();
+        statusBox.hidden = true;
+        statusBox.innerHTML = '';
+      }, 1700);
+    }
+  </script>
+
+</body>
+</html>
+

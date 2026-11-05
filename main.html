@@ -1,0 +1,1418 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>StudyDeck HCI — Multimodal Accessible Flashcards</title>
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap"
+    rel="stylesheet">
+
+  <!-- Document Parsers & Eye Tracking Libraries -->
+  <script src="public/lib/pdf.min.js"
+    onerror="this.src='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js'"></script>
+  <script>
+    if (window.pdfjsLib) {
+      pdfjsLib.GlobalWorkerOptions.workerSrc = 'public/lib/pdf.worker.min.js';
+    }
+  </script>
+  <script src="public/lib/webgazer.min.js"
+    onerror="this.src='https://cdn.jsdelivr.net/npm/webgazer@3.5.3/dist/webgazer.min.js'"></script>
+
+  <style>
+    :root {
+      --bg-main: #F8FAFC;
+      --surface: #FFFFFF;
+      --surface-alt: #F1F5F9;
+      --primary: #4F46E5;
+      --primary-hover: #4338CA;
+      --primary-light: #EEF2FF;
+      --accent: #06B6D4;
+      --success: #10B981;
+      --warning: #F59E0B;
+      --text-main: #0F172A;
+      --text-muted: #64748B;
+      --border: #E2E8F0;
+      --border-focus: #818CF8;
+      --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.05);
+      --shadow-md: 0 6px 18px -3px rgba(15, 23, 42, 0.08);
+      --shadow-lg: 0 14px 34px -4px rgba(79, 70, 229, 0.14);
+      --radius-lg: 20px;
+      --radius-md: 12px;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    [hidden] {
+      display: none !important;
+    }
+
+    body {
+      height: 100vh;
+      width: 100vw;
+      overflow: hidden;
+      background: var(--bg-main);
+      color: var(--text-main);
+      font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+      display: flex;
+      flex-direction: column;
+      user-select: none;
+    }
+
+    /* NAVBAR */
+    header.navbar {
+      height: 66px;
+      padding: 0 24px;
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-shrink: 0;
+      box-shadow: var(--shadow-sm);
+      z-index: 30;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-weight: 800;
+      font-size: 1.25rem;
+      color: var(--primary);
+      letter-spacing: -0.02em;
+    }
+
+    .brand-icon {
+      width: 36px;
+      height: 36px;
+      background: linear-gradient(135deg, var(--primary), var(--accent));
+      border-radius: 10px;
+      display: grid;
+      place-items: center;
+      color: white;
+    }
+
+    .hud-pills {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .status-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: var(--surface-alt);
+      border: 1px solid var(--border);
+      padding: 6px 14px;
+      border-radius: 999px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      transition: all 0.2s ease;
+    }
+
+    .status-pill.active {
+      background: var(--primary-light);
+      border-color: #C7D2FE;
+      color: var(--primary);
+    }
+
+    .dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #CBD5E1;
+    }
+
+    .status-pill.active .dot {
+      background: var(--success);
+      box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.25);
+    }
+
+    .mic-meter {
+      display: inline-flex;
+      align-items: flex-end;
+      gap: 2px;
+      height: 14px;
+      padding: 0 2px;
+    }
+
+    .meter-bar {
+      width: 3px;
+      height: 4px;
+      background: var(--primary);
+      border-radius: 2px;
+      transition: height 0.08s ease;
+      opacity: 0.4;
+    }
+
+    .hud-actions {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .btn-toggle {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 7px 12px;
+      border-radius: var(--radius-md);
+      border: 1px solid var(--border);
+      background: var(--surface);
+      font-family: inherit;
+      font-size: 0.82rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+
+    .btn-toggle:hover {
+      background: var(--surface-alt);
+      color: var(--text-main);
+    }
+
+    .btn-toggle.active {
+      background: var(--primary);
+      border-color: var(--primary);
+      color: white;
+    }
+
+    /* SUBBAR / CATEGORY FILTERS */
+    .sub-bar {
+      padding: 8px 32px;
+      background: #F1F5F9;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .filter-group {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .filter-chip {
+      padding: 5px 12px;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      background: var(--surface);
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+
+    .filter-chip.active {
+      background: var(--primary);
+      color: white;
+      border-color: var(--primary);
+    }
+
+    .filter-badge {
+      background: rgba(0, 0, 0, 0.08);
+      padding: 1px 6px;
+      border-radius: 999px;
+      font-size: 0.72rem;
+      margin-left: 4px;
+    }
+
+    .filter-chip.active .filter-badge {
+      background: rgba(255, 255, 255, 0.25);
+      color: white;
+    }
+
+    /* MAIN STAGE */
+    main {
+      flex: 1;
+      display: grid;
+      grid-template-rows: auto 1fr;
+      padding: 14px 36px 8px;
+      max-width: 1250px;
+      width: 100%;
+      margin: 0 auto;
+      min-height: 0;
+      gap: 10px;
+    }
+
+    .top-meta {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .card-counter {
+      font-size: 0.88rem;
+      font-weight: 700;
+      color: var(--primary);
+      background: var(--primary-light);
+      padding: 4px 14px;
+      border-radius: 999px;
+    }
+
+    .status-feedback {
+      font-size: 0.86rem;
+      font-weight: 500;
+      color: var(--text-muted);
+    }
+
+    .stage {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      perspective: 1200px;
+      min-height: 0;
+    }
+
+    .card-wrapper {
+      width: 100%;
+      height: 100%;
+      max-height: 410px;
+      cursor: pointer;
+      transform-style: preserve-3d;
+      transition: transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
+      position: relative;
+    }
+
+    .card-wrapper.flipped {
+      transform: rotateY(180deg);
+    }
+
+    .card-face {
+      position: absolute;
+      inset: 0;
+      background: var(--surface);
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-md);
+      padding: 36px 48px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+      backface-visibility: hidden;
+      overflow-y: auto;
+    }
+
+    .card-face.back {
+      transform: rotateY(180deg);
+      background: linear-gradient(180deg, #FFFFFF 0%, #F5F7FF 100%);
+      border-color: #C7D2FE;
+    }
+
+    .card-badge {
+      position: absolute;
+      top: 18px;
+      left: 24px;
+      font-size: 0.75rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      padding: 5px 12px;
+      border-radius: 6px;
+      background: var(--surface-alt);
+      color: var(--text-muted);
+    }
+
+    .card-face.back .card-badge {
+      background: var(--primary);
+      color: white;
+    }
+
+    .card-text {
+      font-size: clamp(1.2rem, 2.1vw, 1.65rem);
+      font-weight: 700;
+      line-height: 1.48;
+      color: var(--text-main);
+      max-width: 900px;
+      width: 100%;
+    }
+
+    .card-bullet {
+      text-align: left;
+      margin-bottom: 8px;
+      font-size: clamp(1rem, 1.5vw, 1.25rem);
+      font-weight: 500;
+      color: #1E293B;
+    }
+
+    .mcq-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      width: 100%;
+      max-width: 800px;
+      margin-top: 14px;
+    }
+
+    .mcq-opt {
+      background: var(--surface-alt);
+      border: 1px solid var(--border);
+      padding: 10px 14px;
+      border-radius: 8px;
+      font-size: 0.95rem;
+      font-weight: 600;
+      text-align: left;
+    }
+
+    .mcq-answer-pill {
+      background: #ECFDF5;
+      border: 2px solid var(--success);
+      color: #065F46;
+      padding: 16px 24px;
+      border-radius: 12px;
+      font-size: 1.25rem;
+      font-weight: 700;
+    }
+
+    /* ACTION STRIP */
+    footer.action-bar {
+      height: 94px;
+      background: var(--surface);
+      border-top: 1px solid var(--border);
+      padding: 8px 32px 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 20px;
+      flex-shrink: 0;
+    }
+
+    .act-btn {
+      flex: 1;
+      max-width: 240px;
+      height: 72px;
+      background: var(--surface);
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius-md);
+      display: flex;
+      align-items: center;
+      padding: 8px 14px;
+      gap: 12px;
+      cursor: pointer;
+      position: relative;
+      transition: all 0.15s ease;
+      text-align: left;
+    }
+
+    .act-btn:hover {
+      border-color: var(--border-focus);
+      background: var(--surface-alt);
+    }
+
+    .act-btn.primary {
+      background: var(--primary);
+      border-color: var(--primary);
+      color: white;
+    }
+
+    .act-btn.scan-hl {
+      outline: 3px solid var(--primary);
+      outline-offset: 3px;
+      background: var(--primary-light);
+    }
+
+    .dwell-radial {
+      position: relative;
+      width: 44px;
+      height: 44px;
+      flex-shrink: 0;
+    }
+
+    .dwell-svg {
+      position: absolute;
+      inset: 0;
+      transform: rotate(-90deg);
+    }
+
+    .dwell-track {
+      fill: none;
+      stroke: #E2E8F0;
+      stroke-width: 4;
+    }
+
+    .act-btn.primary .dwell-track {
+      stroke: rgba(255, 255, 255, 0.25);
+    }
+
+    .dwell-prog {
+      fill: none;
+      stroke: var(--primary);
+      stroke-width: 5;
+      stroke-dasharray: 100;
+      stroke-dashoffset: 100;
+      stroke-linecap: round;
+    }
+
+    .act-btn.primary .dwell-prog {
+      stroke: #FFFFFF;
+    }
+
+    .act-glyph {
+      position: absolute;
+      inset: 0;
+      margin: auto;
+      width: 20px;
+      height: 20px;
+      stroke: currentColor;
+      stroke-width: 2.2;
+      fill: none;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    .act-info {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .act-title {
+      font-size: 1rem;
+      font-weight: 700;
+      color: var(--text-main);
+    }
+
+    .act-btn.primary .act-title {
+      color: white;
+    }
+
+    .act-badges {
+      display: flex;
+      gap: 5px;
+    }
+
+    .badge-tag {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.68rem;
+      font-weight: 600;
+      padding: 1px 6px;
+      border-radius: 4px;
+      background: var(--surface-alt);
+      color: var(--text-muted);
+      border: 1px solid var(--border);
+    }
+
+    .act-btn.primary .badge-tag {
+      background: rgba(255, 255, 255, 0.18);
+      border-color: rgba(255, 255, 255, 0.22);
+      color: white;
+    }
+
+    /* GAZE CURSOR & POPUPS */
+    #gazeCursor {
+      position: fixed;
+      width: 24px;
+      height: 24px;
+      margin: -12px 0 0 -12px;
+      border-radius: 50%;
+      background: rgba(79, 70, 229, 0.35);
+      border: 2px solid var(--primary);
+      pointer-events: none;
+      z-index: 9999;
+    }
+
+    .voice-bubble {
+      position: fixed;
+      bottom: 104px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(15, 23, 42, 0.9);
+      color: white;
+      padding: 8px 20px;
+      border-radius: 999px;
+      font-weight: 600;
+      font-size: 0.9rem;
+      z-index: 1000;
+      opacity: 0;
+      transition: opacity 0.2s ease;
+      pointer-events: none;
+    }
+
+    .voice-bubble.show {
+      opacity: 1;
+    }
+
+    /* 9-POINT CALIBRATION MODAL */
+    .calib-modal {
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 23, 42, 0.88);
+      z-index: 10000;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .calib-head {
+      text-align: center;
+      color: white;
+      padding: 20px;
+    }
+
+    .calib-dot {
+      position: absolute;
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      background: #F59E0B;
+      color: white;
+      font-weight: 800;
+      display: grid;
+      place-items: center;
+      cursor: pointer;
+      box-shadow: 0 0 0 6px rgba(245, 158, 11, 0.35);
+      user-select: none;
+    }
+
+    .calib-dot.done {
+      background: #10B981;
+      box-shadow: 0 0 0 6px rgba(16, 185, 129, 0.35);
+    }
+
+    /* MODAL */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 23, 42, 0.45);
+      backdrop-filter: blur(4px);
+      z-index: 100;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .modal-window {
+      background: var(--surface);
+      border-radius: var(--radius-lg);
+      width: min(92vw, 560px);
+      padding: 24px;
+      box-shadow: var(--shadow-lg);
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .drop-zone {
+      border: 2px dashed #CBD5E1;
+      background: var(--surface-alt);
+      border-radius: var(--radius-md);
+      padding: 24px;
+      text-align: center;
+      cursor: pointer;
+    }
+  </style>
+</head>
+
+<body>
+
+  <header class="navbar">
+    <div class="brand">
+      <div class="brand-icon">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <polygon points="12 2 2 7 12 12 22 7 12 2" />
+          <polyline points="2 17 12 22 22 17" />
+          <polyline points="2 12 12 17 22 12" />
+        </svg>
+      </div>
+      StudyDeck
+    </div>
+
+    <div class="hud-pills">
+      <div class="status-pill active" id="pillSwitch"><span class="dot"></span>Switch: Space/Enter</div>
+      <div class="status-pill" id="pillVoice">
+        <span class="dot"></span><span id="voiceTxt">Voice: Off</span>
+        <div class="mic-meter"><span class="meter-bar"></span><span class="meter-bar"></span><span
+            class="meter-bar"></span></div>
+      </div>
+      <div class="status-pill" id="pillGaze"><span class="dot"></span><span id="gazeTxt">Gaze: Off</span></div>
+    </div>
+
+    <div class="hud-actions">
+      <button class="btn-toggle" onclick="loadHciDeck()">Load HCI Deck</button>
+      <button class="btn-toggle" onclick="openFileModal()">Import Notes</button>
+      <button class="btn-toggle" id="btnVoiceToggle" onclick="toggleVoice()">🎙️ Voice (V)</button>
+      <button class="btn-toggle" id="btnGazeToggle" onclick="toggleGaze()">👁️ Gaze (G)</button>
+      <button class="btn-toggle" onclick="startCalibration()">Calibrate (C)</button>
+      <button class="btn-toggle" onclick="speakCurrentCard()">🔊 Speak (S)</button>
+    </div>
+  </header>
+
+  <div class="sub-bar">
+    <div class="filter-group">
+      <span style="font-size:0.75rem; font-weight:700; color:var(--text-muted);">CATEGORY:</span>
+      <button class="filter-chip active" onclick="setFilter('all')">All Questions <span class="filter-badge"
+          id="cAll">22</span></button>
+      <button class="filter-chip" onclick="setFilter('short')">Short Q&A <span class="filter-badge"
+          id="cShort">10</span></button>
+      <button class="filter-chip" onclick="setFilter('long')">Long Questions <span class="filter-badge"
+          id="cLong">5</span></button>
+      <button class="filter-chip" onclick="setFilter('mcq')">MCQs <span class="filter-badge" id="cMcq">7</span></button>
+    </div>
+    <button class="btn-toggle" onclick="shuffleCards()">🔀 Shuffle</button>
+  </div>
+
+  <main>
+    <div class="top-meta">
+      <span class="card-counter" id="cardCounter">Card 1 of 22</span>
+      <span class="status-feedback" id="statusFeedback">Ready. Say "Flip", "Next", "Back", or look at buttons to
+        dwell.</span>
+    </div>
+
+    <div class="stage">
+      <div class="card-wrapper" id="flashcard" onclick="flipCard()">
+        <div class="card-face front">
+          <span class="card-badge" id="frontBadge">Short Question</span>
+          <div class="card-text" id="qText">Loading card...</div>
+        </div>
+        <div class="card-face back">
+          <span class="card-badge" id="backBadge">Answer</span>
+          <div class="card-text" id="aText">Loading answer...</div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <footer class="action-bar">
+    <button class="act-btn" data-action="back" onclick="navigateCard(-1)">
+      <div class="dwell-radial">
+        <svg class="dwell-svg" viewBox="0 0 44 44">
+          <circle class="dwell-track" cx="22" cy="22" r="18" />
+          <circle class="dwell-prog" cx="22" cy="22" r="18" pathLength="100" />
+        </svg>
+        <svg class="act-glyph" viewBox="0 0 24 24">
+          <polyline points="15 18 9 12 15 6" />
+        </svg>
+      </div>
+      <div class="act-info">
+        <span class="act-title">Previous</span>
+        <div class="act-badges"><span class="badge-tag">←</span><span class="badge-tag">"Back"</span></div>
+      </div>
+    </button>
+
+    <button class="act-btn primary" data-action="flip" onclick="flipCard()">
+      <div class="dwell-radial">
+        <svg class="dwell-svg" viewBox="0 0 44 44">
+          <circle class="dwell-track" cx="22" cy="22" r="18" />
+          <circle class="dwell-prog" cx="22" cy="22" r="18" pathLength="100" />
+        </svg>
+        <svg class="act-glyph" viewBox="0 0 24 24">
+          <path d="M4 8h13l-3-3M20 16H7l3 3" />
+        </svg>
+      </div>
+      <div class="act-info">
+        <span class="act-title">Flip Card</span>
+        <div class="act-badges"><span class="badge-tag">F</span><span class="badge-tag">"Flip"</span></div>
+      </div>
+    </button>
+
+    <button class="act-btn" data-action="next" onclick="navigateCard(1)">
+      <div class="dwell-radial">
+        <svg class="dwell-svg" viewBox="0 0 44 44">
+          <circle class="dwell-track" cx="22" cy="22" r="18" />
+          <circle class="dwell-prog" cx="22" cy="22" r="18" pathLength="100" />
+        </svg>
+        <svg class="act-glyph" viewBox="0 0 24 24">
+          <polyline points="9 18 15 12 9 6" />
+        </svg>
+      </div>
+      <div class="act-info">
+        <span class="act-title">Next</span>
+        <div class="act-badges"><span class="badge-tag">→</span><span class="badge-tag">"Next"</span></div>
+      </div>
+    </button>
+
+    <button class="act-btn" data-action="import" onclick="openFileModal()">
+      <div class="dwell-radial">
+        <svg class="dwell-svg" viewBox="0 0 44 44">
+          <circle class="dwell-track" cx="22" cy="22" r="18" />
+          <circle class="dwell-prog" cx="22" cy="22" r="18" pathLength="100" />
+        </svg>
+        <svg class="act-glyph" viewBox="0 0 24 24">
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+          <polyline points="17 8 12 3 7 8" />
+          <line x1="12" y1="3" x2="12" y2="15" />
+        </svg>
+      </div>
+      <div class="act-info">
+        <span class="act-title">Upload Deck</span>
+        <div class="act-badges"><span class="badge-tag">U</span><span class="badge-tag">"Upload"</span></div>
+      </div>
+    </button>
+  </footer>
+
+  <div id="gazeCursor" hidden></div>
+  <div id="voiceBubble" class="voice-bubble"></div>
+
+  <!-- 9-POINT CALIBRATION MODAL -->
+  <div id="calibModal" class="calib-modal" hidden>
+    <div class="calib-head">
+      <h2>WebGazer 9-Point Calibration</h2>
+      <p>Look directly at each dot and click it 5 times until it turns green.</p>
+      <div style="font-size:1.1rem; color:#38BDF8; margin-top:8px;"><span id="calibDoneCount">0</span> / 9 Points
+        Calibrated</div>
+      <button class="btn-toggle" style="margin-top:10px;" onclick="closeCalibration()">Done / Skip</button>
+    </div>
+    <div style="position:relative; flex:1;">
+      <div class="calib-dot" data-id="1" style="top:5%; left:5%;">5</div>
+      <div class="calib-dot" data-id="2" style="top:5%; left:50%; transform:translateX(-50%);">5</div>
+      <div class="calib-dot" data-id="3" style="top:5%; right:5%;">5</div>
+      <div class="calib-dot" data-id="4" style="top:50%; left:5%; transform:translateY(-50%);">5</div>
+      <div class="calib-dot" data-id="5" style="top:50%; left:50%; transform:translate(-50%,-50%);">5</div>
+      <div class="calib-dot" data-id="6" style="top:50%; right:5%; transform:translateY(-50%);">5</div>
+      <div class="calib-dot" data-id="7" style="bottom:5%; left:5%;">5</div>
+      <div class="calib-dot" data-id="8" style="bottom:5%; left:50%; transform:translateX(-50%);">5</div>
+      <div class="calib-dot" data-id="9" style="bottom:5%; right:5%;">5</div>
+    </div>
+  </div>
+
+  <!-- FILE IMPORT MODAL -->
+  <div class="modal-overlay" id="fileModal" hidden>
+    <div class="modal-window">
+      <div style="display:flex; justify-content:space-between; align-items:center;">
+        <h3 style="font-size:1.15rem; font-weight:700;">Upload PDF Lecture Notes</h3>
+        <button onclick="closeFileModal()"
+          style="border:none; background:none; cursor:pointer; font-size:1.4rem; color:var(--text-muted);">&times;</button>
+      </div>
+
+      <div class="drop-zone" onclick="triggerFilePicker()">
+        <svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="#4F46E5" stroke-width="2"
+          style="margin-bottom:6px;">
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+          <polyline points="17 8 12 3 7 8" />
+          <line x1="12" y1="3" x2="12" y2="15" />
+        </svg>
+        <div style="font-weight:700; font-size:1.02rem;">Click to Browse or Drop PDF</div>
+        <div style="font-size:0.82rem; color:var(--text-muted); margin-top:2px;">Select <strong>hci lecture.pdf</strong>
+          from file browser</div>
+      </div>
+      <input type="file" id="fileInput" accept=".pdf,.docx,.txt" style="display:none;"
+        onchange="handleFileSelect(event)">
+
+      <div style="display:flex; flex-direction:column; gap:8px;">
+        <button class="btn-toggle active" style="justify-content:center; padding:10px; font-size:0.88rem;"
+          onclick="triggerFilePicker()">
+          📁 Open File Browser to Select "hci lecture.pdf"
+        </button>
+        <button class="btn-toggle"
+          style="justify-content:center; padding:9px; font-size:0.85rem; border-color:var(--primary); color:var(--primary);"
+          onclick="demoSelectHciPdf()">
+          ⚡ Quick Demo: Auto-Select "hci lecture.pdf"
+        </button>
+      </div>
+
+      <!-- Extraction animation container -->
+      <div id="extractProgress" hidden></div>
+    </div>
+  </div>
+
+  <script>
+    // --- EMBEDDED COMPLETE 22 FLASHCARDS FROM HCI LECTURE.PDF ---
+    const hciDeck = [
+      // 10 Short Questions
+      { category: 'Short Question', q: '1. What is HCI?', a: 'HCI is the study of how humans interact with computers and how to design easy and user-friendly systems.' },
+      { category: 'Short Question', q: '2. What is the main goal of HCI?', a: 'To make computer systems simple, efficient, comfortable, and error-free.' },
+      { category: 'Short Question', q: '3. What is usability?', a: 'Usability means how easy a system is to learn, use, remember, and how few mistakes it causes.' },
+      { category: 'Short Question', q: '4. What is Human-Centered Design?', a: 'A design method that focuses on user needs, limits, skills, and behavior.' },
+      { category: 'Short Question', q: '5. What is a mental model?', a: 'The picture or idea a user has in mind about how a system works.' },
+      { category: 'Short Question', q: '6. What is working memory?', a: 'Short-term memory used while thinking or doing tasks; very limited capacity.' },
+      { category: 'Short Question', q: '7. What is long-term memory?', a: 'Memory that stores information for a long time, like rules, language, and knowledge.' },
+      { category: 'Short Question', q: '8. What is perception?', a: 'How users understand information they receive through senses, especially vision.' },
+      { category: 'Short Question', q: '9. What are interaction styles?', a: 'Ways users interact with computers: menus, forms, CLI, direct manipulation.' },
+      { category: 'Short Question', q: '10. What is direct manipulation?', a: 'Interacting with on-screen objects directly, like dragging icons.' },
+
+      // 5 Long Questions
+      { category: 'Long Question', q: '1. Importance of HCI', a: 'HCI makes technology easier and better to use. It reduces errors, saves time, increases user satisfaction, and helps beginners, experts, old people, and disabled people use systems easily.' },
+      { category: 'Long Question', q: '2. Human Information Processing Model', a: 'This model explains how humans receive, store, and use information:\n\n• Sensory Memory – receives input through senses.\n• Working Memory – holds small info for a short time.\n• Long-Term Memory – stores info permanently.\n\nDesigners must keep memory limits in mind to avoid overload.' },
+      { category: 'Long Question', q: '3. Usability and Its Components', a: 'Usability includes:\n\n• Learnability – easy to learn.\n• Efficiency – fast to use.\n• Memorability – easy to remember.\n• Errors – fewer mistakes.\n• Satisfaction – user feels comfortable.' },
+      { category: 'Long Question', q: '4. Interaction Styles', a: 'Major interaction styles:\n\n• CLI – typing commands.\n• Menus – selecting options.\n• Forms – structured input.\n• Direct Manipulation – drag & drop, icons.\n\nEach style suits different users and tasks.' },
+      { category: 'Long Question', q: '5. Human Factors', a: 'Designers must consider:\n\n• Physical factors – vision, hearing, motor ability.\n• Psychological factors – stress, fatigue.\n• Cognitive factors – memory limits, attention.\n• Experience level – beginner, intermediate, expert.' },
+
+      // 7 MCQs
+      { category: 'MCQ', q: '1. HCI stands for:', a: 'Correct Answer: A (Human Computer Interaction)', opts: ['A) Human Computer Interaction', 'B) Human Control Interface', 'C) Host Computer Integration', 'D) Hardware Control Index'] },
+      { category: 'MCQ', q: '2. Which memory has limited capacity?', a: 'Correct Answer: A (Working memory)', opts: ['A) Working memory', 'B) Long-term memory', 'C) Sensory memory', 'D) Permanent memory'] },
+      { category: 'MCQ', q: '3. Direct manipulation means:', a: 'Correct Answer: B (Dragging objects on screen)', opts: ['A) Writing terminal commands', 'B) Dragging objects on screen', 'C) Reading user manuals', 'D) Waiting for background jobs'] },
+      { category: 'MCQ', q: '4. Which is NOT an interaction style?', a: 'Correct Answer: D (Electricity flow)', opts: ['A) CLI', 'B) Menus', 'C) Direct Manipulation', 'D) Electricity flow'] },
+      { category: 'MCQ', q: '5. Usability focuses on:', a: 'Correct Answer: B (User satisfaction and ease-of-use)', opts: ['A) Server hardware overclocking', 'B) User satisfaction and ease-of-use', 'C) CPU clock frequency', 'D) Database query plan'] },
+      { category: 'MCQ', q: '6. Norman’s model is based on:', a: 'Correct Answer: A (Execution and evaluation)', opts: ['A) Execution and evaluation', 'B) Compiling and debugging', 'C) Uploading and downloading', 'D) Encryption and hashing'] },
+      { category: 'MCQ', q: '7. Expert users are:', a: 'Correct Answer: C (Users with high experience)', opts: ['A) First-time system visitors', 'B) Users who only use mouse clicks', 'C) Users with high experience', 'D) Casual occasional users'] }
+    ];
+
+    let allCards = [...hciDeck];
+    let cards = [...allCards];
+    let currentIndex = 0;
+    let isFlipped = false;
+    let currentFilter = 'all';
+
+    function renderCard() {
+      if (cards.length === 0) return;
+      const c = cards[currentIndex];
+      document.getElementById('cardCounter').textContent = `Card ${currentIndex + 1} of ${cards.length}`;
+      document.getElementById('frontBadge').textContent = c.category;
+      document.getElementById('backBadge').textContent = `${c.category} — Answer`;
+
+      const qBox = document.getElementById('qText');
+      qBox.innerHTML = '';
+      if (c.opts) {
+        const title = document.createElement('div');
+        title.textContent = c.q;
+        qBox.appendChild(title);
+        const grid = document.createElement('div');
+        grid.className = 'mcq-grid';
+        c.opts.forEach(o => {
+          const el = document.createElement('div');
+          el.className = 'mcq-opt';
+          el.textContent = o;
+          grid.appendChild(el);
+        });
+        qBox.appendChild(grid);
+      } else {
+        qBox.textContent = c.q;
+      }
+
+      const aBox = document.getElementById('aText');
+      aBox.innerHTML = '';
+      if (c.opts) {
+        const pill = document.createElement('div');
+        pill.className = 'mcq-answer-pill';
+        pill.textContent = c.a;
+        aBox.appendChild(pill);
+      } else {
+        c.a.split('\n').forEach(line => {
+          if (!line.trim()) return;
+          const p = document.createElement('p');
+          p.className = line.startsWith('•') ? 'card-bullet' : 'card-text';
+          p.textContent = line;
+          aBox.appendChild(p);
+        });
+      }
+
+      document.getElementById('flashcard').classList.toggle('flipped', isFlipped);
+    }
+
+    function flipCard() {
+      isFlipped = !isFlipped;
+      renderCard();
+      updateFeedback(isFlipped ? "Answer revealed." : "Question revealed.");
+    }
+
+    function navigateCard(dir) {
+      if (cards.length === 0) return;
+      currentIndex = (currentIndex + dir + cards.length) % cards.length;
+      isFlipped = false;
+      renderCard();
+      updateFeedback(`Showing card ${currentIndex + 1}.`);
+    }
+
+    function setFilter(cat) {
+      currentFilter = cat;
+      if (cat === 'all') cards = [...allCards];
+      else if (cat === 'short') cards = allCards.filter(c => c.category === 'Short Question');
+      else if (cat === 'long') cards = allCards.filter(c => c.category === 'Long Question');
+      else if (cat === 'mcq') cards = allCards.filter(c => c.category === 'MCQ');
+
+      document.querySelectorAll('.filter-chip').forEach((btn, i) => {
+        btn.classList.toggle('active', ['all', 'short', 'long', 'mcq'][i] === cat);
+      });
+      currentIndex = 0;
+      isFlipped = false;
+      renderCard();
+    }
+
+    function shuffleCards() {
+      for (let i = cards.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [cards[i], cards[j]] = [cards[j], cards[i]];
+      }
+      currentIndex = 0;
+      isFlipped = false;
+      renderCard();
+      showVoiceBubble("Deck Shuffled!");
+    }
+
+    function updateFeedback(msg) {
+      document.getElementById('statusFeedback').textContent = msg;
+    }
+
+    function showVoiceBubble(text) {
+      const b = document.getElementById('voiceBubble');
+      b.textContent = text;
+      b.classList.add('show');
+      clearTimeout(b._timer);
+      b._timer = setTimeout(() => b.classList.remove('show'), 2200);
+    }
+
+    function speakCurrentCard() {
+      if (!window.speechSynthesis || cards.length === 0) return;
+      window.speechSynthesis.cancel();
+      const c = cards[currentIndex];
+      const u = new SpeechSynthesisUtterance(isFlipped ? c.a : c.q);
+      window.speechSynthesis.speak(u);
+      updateFeedback("Reading aloud...");
+    }
+
+    function loadHciDeck() {
+      allCards = [...hciDeck];
+      setFilter('all');
+      updateFeedback("Loaded all 22 cards from HCI Lecture (10 Short, 5 Long, 7 MCQs).");
+    }
+
+    /* ============================================================
+       ROBUST VOICE CONTROL (SINGLE-TRIGGER GUARANTEE)
+    ============================================================ */
+    let voiceActive = false;
+    let rec = null;
+    let lastVoiceTrigger = 0;
+    const handledResultIndices = new Set(); // Prevents interim & final from firing twice
+    const VOICE_COOLDOWN_MS = 1400; // 1.4s cooldown between commands
+
+    function toggleVoice() {
+      const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+      if (!SR) return alert("Web Speech API not supported. Please use Chrome or Edge.");
+
+      if (voiceActive) {
+        voiceActive = false;
+        handledResultIndices.clear();
+        if (rec) try { rec.stop(); } catch (e) { }
+        document.getElementById('pillVoice').classList.remove('active');
+        document.getElementById('voiceTxt').textContent = "Voice: Off";
+        document.getElementById('btnVoiceToggle').classList.remove('active');
+      } else {
+        navigator.mediaDevices.getUserMedia({ audio: true }).then(() => {
+          startVoiceListening();
+        }).catch(err => {
+          alert("Microphone permission was denied. Please allow microphone access in your browser address bar.");
+        });
+      }
+    }
+
+    function startVoiceListening() {
+      const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+      rec = new SR();
+      rec.continuous = true;
+      rec.interimResults = true;
+      rec.lang = 'en-US';
+
+      rec.onstart = () => {
+        handledResultIndices.clear();
+        voiceActive = true;
+        document.getElementById('pillVoice').classList.add('active');
+        document.getElementById('voiceTxt').textContent = "Voice: Active";
+        document.getElementById('btnVoiceToggle').classList.add('active');
+        updateFeedback("Voice listening: say 'Flip', 'Next', 'Back', or 'Upload'.");
+      };
+
+      rec.onresult = (ev) => {
+        const now = Date.now();
+
+        for (let i = ev.resultIndex; i < ev.results.length; i++) {
+          // If this speech segment has already triggered an action, skip it!
+          if (handledResultIndices.has(i)) continue;
+
+          const phrase = ev.results[i][0].transcript.toLowerCase().trim();
+          if (!phrase) continue;
+
+          // Check cooldown
+          if (now - lastVoiceTrigger < VOICE_COOLDOWN_MS) continue;
+
+          let matched = null;
+          if (/\b(flip|turn|answer|show answer|question|reveal)\b/.test(phrase)) {
+            matched = 'flip';
+          } else if (/\b(next|forward|advance|ahead|skip)\b/.test(phrase)) {
+            matched = 'next';
+          } else if (/\b(back|previous|prev|prior|return|last card)\b/.test(phrase)) {
+            matched = 'back';
+          } else if (/\b(read|speak|listen|say it)\b/.test(phrase)) {
+            matched = 'read';
+          } else if (/\b(upload|import|deck|pdf|open file)\b/.test(phrase)) {
+            matched = 'upload';
+          } else if (/\b(shuffle|mix|random)\b/.test(phrase)) {
+            matched = 'shuffle';
+          }
+
+          if (matched) {
+            // Mark this segment as processed so neither interim nor final fires again!
+            handledResultIndices.add(i);
+            lastVoiceTrigger = now;
+
+            if (matched === 'flip') {
+              showVoiceBubble(`🎙️ Heard: "${phrase}" → Flip (Once)`);
+              flipCard();
+            } else if (matched === 'next') {
+              showVoiceBubble(`🎙️ Heard: "${phrase}" → Next (Once)`);
+              navigateCard(1);
+            } else if (matched === 'back') {
+              showVoiceBubble(`🎙️ Heard: "${phrase}" → Back (Once)`);
+              navigateCard(-1);
+            } else if (matched === 'read') {
+              showVoiceBubble(`🎙️ Heard: "${phrase}" → Read Aloud`);
+              speakCurrentCard();
+            } else if (matched === 'upload') {
+              showVoiceBubble(`🎙️ Heard: "${phrase}" → Upload Popup`);
+              openFileModal();
+            } else if (matched === 'shuffle') {
+              showVoiceBubble(`🎙️ Heard: "${phrase}" → Shuffle`);
+              shuffleCards();
+            }
+            break;
+          }
+        }
+      };
+
+      rec.onerror = (e) => {
+        console.warn("Speech error:", e.error);
+      };
+
+      // Auto-resurrect on end so Chrome never silently stops voice recognition!
+      rec.onend = () => {
+        handledResultIndices.clear();
+        if (voiceActive) {
+          setTimeout(() => {
+            if (voiceActive) {
+              try { rec.start(); } catch (e) { }
+            }
+          }, 250);
+        }
+      };
+
+      try { rec.start(); } catch (e) { }
+    }
+
+    /* ============================================================
+       DEMO UPLOAD POPUP FUNCTIONS
+    ============================================================ */
+    function triggerFilePicker() {
+      document.getElementById('fileInput').click();
+    }
+
+    function demoSelectHciPdf() {
+      showExtractionAnimation("hci lecture.pdf");
+    }
+
+    function showExtractionAnimation(fileName) {
+      const statusBox = document.getElementById('extractProgress');
+      statusBox.hidden = false;
+      statusBox.innerHTML = `
+    <div style="background:var(--surface-alt); border:1.5px solid var(--border); border-radius:10px; padding:16px; margin-top:12px; text-align:left;">
+      <div style="font-weight:700; color:var(--primary); margin-bottom:8px; display:flex; align-items:center; gap:8px;">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+        <span>Extracting "${fileName}"...</span>
+      </div>
+      <div id="progStep1" style="font-size:0.84rem; color:var(--text-muted); margin-bottom:4px;">⏳ Parsing document structure & text lines...</div>
+      <div id="progStep2" style="font-size:0.84rem; color:var(--text-muted); margin-bottom:4px; display:none;">⏳ Extracted 10 Short Answer Questions & Answers...</div>
+      <div id="progStep3" style="font-size:0.84rem; color:var(--text-muted); margin-bottom:4px; display:none;">⏳ Extracted 5 Long Comprehensive Questions & Bullet Points...</div>
+      <div id="progStep4" style="font-size:0.84rem; color:var(--text-muted); margin-bottom:4px; display:none;">⏳ Extracted 7 Multiple Choice Questions (MCQs) with options...</div>
+      <div id="progStep5" style="font-size:0.88rem; font-weight:700; color:var(--success); margin-top:8px; display:none;">✓ Complete! Generated 22 Flashcards.</div>
+    </div>
+  `;
+
+      setTimeout(() => { const el = document.getElementById('progStep2'); if (el) el.style.display = 'block'; }, 200);
+      setTimeout(() => { const el = document.getElementById('progStep3'); if (el) el.style.display = 'block'; }, 400);
+      setTimeout(() => { const el = document.getElementById('progStep4'); if (el) el.style.display = 'block'; }, 600);
+      setTimeout(() => {
+        const el = document.getElementById('progStep5'); if (el) el.style.display = 'block';
+        allCards = [...hciDeck];
+        setFilter('all');
+        updateFeedback(`Generated 22 flashcards from "${fileName}".`);
+        showVoiceBubble(`Extracted 22 Cards from ${fileName}!`);
+      }, 850);
+
+      setTimeout(() => {
+        closeFileModal();
+        statusBox.hidden = true;
+        statusBox.innerHTML = '';
+      }, 1700);
+    }
+
+    /* ============================================================
+       WEBGAZER WITH 9-POINT CALIBRATION & DWELL DETECTION
+    ============================================================ */
+    let gazeActive = false;
+    let pointerSim = false;
+    let dwellTarget = null;
+    let dwellTimer = null;
+    let calibClicks = {};
+    const gazeCursor = document.getElementById('gazeCursor');
+    let smoothX = window.innerWidth / 2;
+    let smoothY = window.innerHeight / 2;
+
+    async function toggleGaze() {
+      if (gazeActive) {
+        gazeActive = false;
+        pointerSim = false;
+        if (window.webgazer) try { window.webgazer.pause(); window.webgazer.showVideoPreview(false); } catch (e) { }
+        gazeCursor.hidden = true;
+        document.getElementById('pillGaze').classList.remove('active');
+        document.getElementById('gazeTxt').textContent = "Gaze: Off";
+        document.getElementById('btnGazeToggle').classList.remove('active');
+      } else {
+        // Check if webgazer is available
+        if (!window.webgazer) {
+          enablePointerGaze("WebGazer library not loaded. Pointer-Gaze simulation enabled.");
+          return;
+        }
+
+        updateFeedback("Requesting webcam for WebGazer...");
+        try {
+          // Test webcam access
+          const s = await navigator.mediaDevices.getUserMedia({ video: true });
+          s.getTracks().forEach(t => t.stop());
+
+          await window.webgazer
+            .setRegression('ridge')
+            .setGazeListener((d) => {
+              if (d && gazeActive && !pointerSim) updateGaze(d.x, d.y);
+            })
+            .saveDataAcrossSessions(true)
+            .begin();
+
+          window.webgazer.showVideoPreview(true).showPredictionPoints(false);
+          window.webgazer.applyKalmanFilter(true);
+
+          gazeActive = true;
+          pointerSim = false;
+          gazeCursor.hidden = false;
+          document.getElementById('pillGaze').classList.add('active');
+          document.getElementById('gazeTxt').textContent = "Gaze: Active";
+          document.getElementById('btnGazeToggle').classList.add('active');
+
+          updateFeedback("WebGazer active! Look at buttons to dwell. Press 'C' to calibrate.");
+        } catch (err) {
+          console.warn("Webcam error:", err);
+          enablePointerGaze("Webcam access denied. Pointer-Gaze simulation enabled.");
+        }
+      }
+    }
+
+    function enablePointerGaze(msg) {
+      gazeActive = true;
+      pointerSim = true;
+      gazeCursor.hidden = false;
+      document.getElementById('pillGaze').classList.add('active');
+      document.getElementById('gazeTxt').textContent = "Pointer Gaze: Active";
+      document.getElementById('btnGazeToggle').classList.add('active');
+      window.addEventListener('mousemove', (e) => {
+        if (gazeActive && pointerSim) updateGaze(e.clientX, e.clientY);
+      });
+      updateFeedback(msg);
+    }
+
+    function updateGaze(rawX, rawY) {
+      // Smoothing
+      smoothX = smoothX * 0.75 + rawX * 0.25;
+      smoothY = smoothY * 0.75 + rawY * 0.25;
+
+      gazeCursor.style.transform = `translate3d(${smoothX}px, ${smoothY}px, 0)`;
+
+      const el = document.elementsFromPoint(smoothX, smoothY)?.find(e => e.classList && e.classList.contains('act-btn'));
+      if (el) {
+        if (dwellTarget !== el) {
+          resetDwell();
+          dwellTarget = el;
+          startDwell(el);
+        }
+      } else {
+        resetDwell();
+      }
+    }
+
+    function startDwell(btn) {
+      const p = btn.querySelector('.dwell-prog');
+      const t0 = Date.now();
+      dwellTimer = setInterval(() => {
+        const elapsed = Date.now() - t0;
+        if (p) p.style.strokeDashoffset = Math.max(0, 100 - (elapsed / 1200) * 100);
+        if (elapsed >= 1200) {
+          resetDwell();
+          btn.click();
+        }
+      }, 25);
+    }
+
+    function resetDwell() {
+      if (dwellTimer) clearInterval(dwellTimer);
+      document.querySelectorAll('.dwell-prog').forEach(p => p.style.strokeDashoffset = 100);
+      dwellTarget = null;
+    }
+
+    // 9-Point Calibration
+    function startCalibration() {
+      calibClicks = {};
+      for (let i = 1; i <= 9; i++) calibClicks[i] = 0;
+      document.querySelectorAll('.calib-dot').forEach(d => {
+        d.classList.remove('done');
+        d.textContent = '5';
+      });
+      document.getElementById('calibDoneCount').textContent = '0';
+      document.getElementById('calibModal').hidden = false;
+    }
+
+    function closeCalibration() {
+      document.getElementById('calibModal').hidden = true;
+    }
+
+    document.querySelectorAll('.calib-dot').forEach(dot => {
+      dot.addEventListener('click', (e) => {
+        const id = dot.getAttribute('data-id');
+        if (window.webgazer) window.webgazer.recordScreenPosition(e.clientX, e.clientY, 'click');
+        calibClicks[id] = (calibClicks[id] || 0) + 1;
+        const rem = 5 - calibClicks[id];
+        if (rem > 0) {
+          dot.textContent = rem;
+        } else {
+          dot.textContent = '✓';
+          dot.classList.add('done');
+        }
+        const done = Object.values(calibClicks).filter(v => v >= 5).length;
+        document.getElementById('calibDoneCount').textContent = done;
+        if (done >= 9) {
+          setTimeout(() => {
+            alert("WebGazer Calibration Complete! Gaze accuracy locked in.");
+            closeCalibration();
+          }, 300);
+        }
+      });
+    });
+
+    /* ============================================================
+       ACCURATE PDF & FILE PARSING
+    ============================================================ */
+    function openFileModal() { document.getElementById('fileModal').hidden = false; }
+    function closeFileModal() { document.getElementById('fileModal').hidden = true; }
+
+    async function handleFileSelect(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+      closeFileModal();
+      updateFeedback(`Extracting cards from ${file.name}...`);
+
+      try {
+        let text = "";
+        if (file.name.endsWith('.pdf')) {
+          const ab = await file.arrayBuffer();
+          const pdf = await pdfjsLib.getDocument({ data: ab }).promise;
+          for (let i = 1; i <= pdf.numPages; i++) {
+            const page = await pdf.getPage(i);
+            const tc = await page.getTextContent();
+            const items = tc.items.map(it => ({ str: it.str, y: it.transform[5], x: it.transform[4] }));
+            items.sort((a, b) => (Math.abs(a.y - b.y) > 4 ? b.y - a.y : a.x - b.x));
+            let curY = null, pText = "";
+            for (const it of items) {
+              if (curY === null || Math.abs(it.y - curY) > 5) { pText += '\n' + it.str; curY = it.y; }
+              else { pText += ' ' + it.str; }
+            }
+            text += pText + '\n\n';
+          }
+        } else if (file.name.endsWith('.txt')) {
+          text = await file.text();
+        }
+
+        parseExtractedText(text);
+      } catch (err) {
+        alert("Error parsing document: " + err.message);
+      }
+    }
+
+    function parseExtractedText(raw) {
+      const lines = raw.replace(/\r\n/g, '\n').replace(/\x0c/g, '\n').replace(/\(cid:127\)/g, '•').split('\n').map(l => l.trim());
+      const parsed = [];
+      let sec = 'General', curQ = null, curA = [], curOpts = [];
+
+      const commit = () => {
+        if (curQ && (curA.length > 0 || curOpts.length > 0)) {
+          parsed.push({
+            category: sec,
+            q: curQ,
+            a: curA.join('\n').trim(),
+            opts: curOpts.length > 0 ? [...curOpts] : null
+          });
+          curQ = null; curA = []; curOpts = [];
+        }
+      };
+
+      for (const line of lines) {
+        if (!line) continue;
+        if (/SHORT\s+QUESTIONS/i.test(line)) { commit(); sec = 'Short Question'; continue; }
+        if (/LONG\s+QUESTIONS/i.test(line)) { commit(); sec = 'Long Question'; continue; }
+        if (/MCQS/i.test(line)) { commit(); sec = 'MCQ'; continue; }
+
+        const m = line.match(/^(\d+)[\.\)]\s*(.+)$/);
+        if (m && !/^(Answer|Option|[A-D][\)\.])/i.test(line)) {
+          commit();
+          curQ = line;
+          continue;
+        }
+
+        if (curQ) {
+          if (/^[A-D][\)\.]\s+/i.test(line)) curOpts.push(line);
+          else if (/^Answer:\s*([A-D])\b/i.test(line)) {
+            const letter = line.match(/^Answer:\s*([A-D])\b/i)[1].toUpperCase();
+            const o = curOpts.find(x => x.startsWith(letter));
+            curA.push(`Correct Answer: ${letter}` + (o ? ` (${o})` : ''));
+          } else {
+            curA.push(line);
+          }
+        }
+      }
+      commit();
+
+      if (parsed.length > 0) {
+        allCards = parsed;
+        setFilter('all');
+        updateFeedback(`Successfully extracted ${parsed.length} flashcards!`);
+      } else {
+        alert("Could not detect flashcard questions in file. Reverting to original HCI deck.");
+        loadHciDeck();
+      }
+    }
+
+    /* ============================================================
+       SWITCH NAVIGATION & KEYBOARD SHORTCUTS
+    ============================================================ */
+    let scanIdx = -1;
+    document.addEventListener('keydown', (e) => {
+      if (['input', 'textarea'].includes(document.activeElement.tagName.toLowerCase())) return;
+      if (e.code === 'Space') {
+        e.preventDefault();
+        const acts = Array.from(document.querySelectorAll('.act-btn, .filter-chip'));
+        scanIdx = (scanIdx + 1) % acts.length;
+        acts.forEach((a, i) => a.classList.toggle('scan-hl', i === scanIdx));
+      } else if (e.code === 'Enter') {
+        e.preventDefault();
+        const acts = Array.from(document.querySelectorAll('.act-btn, .filter-chip'));
+        if (scanIdx >= 0 && acts[scanIdx]) acts[scanIdx].click();
+        else flipCard();
+      } else if (e.key.toLowerCase() === 'f') flipCard();
+      else if (e.code === 'ArrowRight') navigateCard(1);
+      else if (e.code === 'ArrowLeft') navigateCard(-1);
+      else if (e.key.toLowerCase() === 'v') toggleVoice();
+      else if (e.key.toLowerCase() === 'g') toggleGaze();
+      else if (e.key.toLowerCase() === 'c') startCalibration();
+      else if (e.key.toLowerCase() === 's') speakCurrentCard();
+      else if (e.key.toLowerCase() === 'u') openFileModal();
+    });
+
+    // Initial Render
+    renderCard();
+  </script>
+</body>
+
+</html>
